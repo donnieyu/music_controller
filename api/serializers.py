@@ -5,15 +5,23 @@ from .models import Room
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ('id', 'code', 'host', 'guest_can_pause', 'votes_to_skip', 'created_at')
-        
+        fields = ('id', 'code', 'host', 'guest_can_pause',
+                  'votes_to_skip', 'created_at', 'title')
+
+
 class CreateRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ('guest_can_pause', 'votes_to_skip')
+        fields = ('guest_can_pause', 'votes_to_skip', 'title')
+
+class DeleteRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ('code',)
 
 class UpdateRoomSerializer(serializers.ModelSerializer):
     code = serializers.CharField(validators=[])
+
     class Meta:
         model = Room
-        fields = ('guest_can_pause', 'votes_to_skip', 'code')
+        fields = ('guest_can_pause', 'votes_to_skip', 'code', 'title')
