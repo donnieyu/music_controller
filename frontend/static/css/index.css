@@ -28,3 +28,39 @@ html, body {
 .MuiGrid-spacing-xs-3 {
     margin: 0 !important;
 }
+
+.MuiCardHeader-content {
+    max-width: calc(100% - 94px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.MuiGrid-spacing-xs-1 {
+    width: 100% !important;
+    margin: 0 !important;
+}
+.MuiGrid-spacing-xs-3 {
+    width: 100% !important;
+}
+
+.createModal {
+    background-color: white; 
+    border-radius: 20px;
+    position: absolute; 
+    top: calc(50% - 250px); 
+    left: calc(50% - 175px); 
+    width: 350px !important;
+    height: 500px !important;
+}
+
+.joinModal {
+    background-color: white; 
+    border-radius: 20px;
+    position: absolute; 
+    top: calc(50% - 150px); 
+    left: calc(50% - 175px); 
+    width: 350px !important;
+    height: 300px !important;
+    padding-top: 20px;
+}

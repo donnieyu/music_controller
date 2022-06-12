@@ -1,23 +1,28 @@
-import { Button, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow, Grid, Typography, ButtonGroup, Card, CardHeader, Avatar, CardMedia, CardContent, CardActions } from "@material-ui/core";
+import { Button, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow, Grid, Typography, ButtonGroup, Card, CardHeader, Avatar, CardMedia, CardContent, CardActions, Snackbar } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { red } from '@material-ui/core/colors';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import ShareIcon from '@material-ui/icons/Share';
+import KeyboardReturnIcon from '@material-ui/icons/KeyboardReturn';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { Link } from "react-router-dom";
 import { makeStyles } from '@material-ui/core/styles';
 import clsx from 'clsx';
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme) => ({
     root: {
-      maxWidth: 345,
+      maxWidth: 250,
+      minWidth: 250,
+      minHeight: 330,
+      marginBottom: 10
     },
     media: {
-      height: 0,
-      paddingTop: '56.25%', // 16:9
+      height: 123,
+      paddingTop: 120
     },
     expand: {
       transform: 'rotate(0deg)',
@@ -30,7 +35,7 @@ const useStyles = makeStyles((theme) => ({
       transform: 'rotate(180deg)',
     },
     avatar: {
-      backgroundColor: red[500],
+      backgroundColor: red[Math.random()*100],
     },
   }));
 
@@ -54,7 +59,6 @@ export default function RoomListPage(props) {
                     });
                     return prev;
                 }, [])
-                console.log(data);
                 setRoomList(data);
             });
     }, []);
@@ -119,7 +123,7 @@ export default function RoomListPage(props) {
 
     const renderRoomListAsTable = () => {
 
-        return <Grid container spacing={3}>
+        return <Grid container spacing={3} style={{padding: "0 140px"}}>
             <Grid item xs={12} align="center">
                 <TableContainer sx={{maxHeight: 500}}>
                     <Table stickyHeader>
@@ -143,8 +147,6 @@ export default function RoomListPage(props) {
                                     return <TableRow hover role="checkbox" key={room.code}>
                                         {columns.map((column) => {
                                             const value = room[column.id];
-                                            console.log(value);
-                                            console.log(room);
                                             return <TableCell key={column.id} align={column.align}>
                                                 {column.id !== "actions" ? value
                                                     : <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
@@ -180,26 +182,62 @@ export default function RoomListPage(props) {
         </Grid>;
     };
 
-    const renderRoomListAsCard = () => {
+    const [openToast, setOpenToast] = useState(false);
 
-        return <>
-            <Grid container direction={"row"} alignItems="center" spacing={3} justifyContent="space-evenly" style={{padding: "0 150px"}}>
-                    {
-                        roomList.map(room => {
-                            return roomCardItem(room);
-                        })
-                    }
-            </Grid>
-        </>;
-    };
+    const handleClose = () => {
+        setOpenToast(false);
+    }
+
     const classes = useStyles();
     const [expanded, setExpanded] = React.useState(false);
 
-    const handleExpandClick = () => {
-        setExpanded(!expanded);
+    const renderRoomListAsCard = () => {
+        if (roomList.length !== 0) {
+            return <>
+                <Grid container direction={"row"} alignItems="center" spacing={3} justifyContent="space-evenly" style={{padding: "0 150px", paddingTop: 12}}>
+                        {
+                            roomList.map(room => {
+                                return roomCardItem(room);
+                            })
+                        }
+                </Grid>
+                <Snackbar anchorOrigin={{ vertical: "top", horizontal: "right" }} open={openToast} autoHideDuration={2000} onClose={handleClose}>
+                    <Alert onClose={handleClose} severity="success">
+                        Room code is copied.
+                    </Alert>
+                </Snackbar>
+            </>;
+        } else {
+            return null;
+        }
     };
+
+    const _copyToClipboard = (value) => {
+        if (value) {
+            const el = document.createElement("textarea");
+            el.value = value;
+            el.setAttribute("readonly", "");
+            el.style.width = "1px";
+            el.style.height = "1px";
+            el.style.position = "absolute";
+            el.style.left = "-9999px";
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand("copy");
+            document.body.removeChild(el);
+            setOpenToast(true);
+            return true;
+        }
+
+        return false;
+    }
     
     const roomCardItem = (room) => {
+        const image_url = room.album_cover;
+        const artist = room.artist_string;
+
+        const dateOption = { year: "numeric", month: "long", day: "numeric"};
+        const date = new Date(room.created_at).toLocaleDateString("en-US", dateOption);
 
         return <Card key={room.code} className={classes.root}>
             <CardHeader
@@ -214,34 +252,37 @@ export default function RoomListPage(props) {
                     </IconButton>
                 }
                 title={room.title}
-                subheader="September 14, 2016"
+                subheader={date}
             />
             <CardMedia
                 className={classes.media}
-                image="/static/images/cards/paella.jpg"
-                title="Paella dish"
+                image={image_url}
+                title={artist}
             />
             <CardContent>
                 <Typography variant="body2" color="textSecondary" component="p">
-                    test
+                    {artist}
                 </Typography>
             </CardContent>
             <CardActions disableSpacing>
-                <IconButton aria-label="add to favorites">
-                    <FavoriteIcon />
-                </IconButton>
-                <IconButton aria-label="share">
+                <IconButton aria-label="share" onClick={() => _copyToClipboard(room.code)}>
                     <ShareIcon />
                 </IconButton>
                 <IconButton
                     className={clsx(classes.expand, {
                             [classes.expandOpen]: expanded,
                         })}
-                    onClick={handleExpandClick}
+                    onClick={() => deleteRoom(room)}
                     aria-expanded={expanded}
-                    aria-label="show more"
+                    aria-label="delete room"
                 >
-                    <ExpandMoreIcon />
+                    <DeleteIcon />
+                </IconButton>
+                <IconButton
+                    onClick={() => roomButtonPressed(room)}
+                    aria-label="enter room"
+                >
+                    <KeyboardReturnIcon />
                 </IconButton>
             </CardActions>
         </Card>;
@@ -250,14 +291,25 @@ export default function RoomListPage(props) {
     const [showAsTable, setShowAsTable] = useState(false);
 
     return <>
-        <Grid container spacing={3}>
-            <Grid item xs={12} alignItems="center">
+        <Grid container>
+            <Grid item xs={12} style={{marginBottom: 20}}>
                 <Typography variant="h4" compact="h4">
                     Room List
                 </Typography>
+                <Typography variant="h6">
+                    Join a room that describes your music favor! And find your music play-mate~~
+                </Typography>
             </Grid>
-            <Grid container xs={12} alignItems="center" justifyContent="center">
-                <Button color="primary" variant="contained" onClick={() => setShowAsTable(!showAsTable)}>{showAsTable ? "Show as Card" : "Show as Table"}</Button>
+            <Grid container alignItems="center" justifyContent="center">
+                <Button variant="contained" color="secondary" onClick={() => props.handleCreateModal(true)}>
+                    Create a Room
+                </Button>
+                <Button variant="contained" style={{marginLeft: 5}} color="default" onClick={() => props.handleJoinModal(true)}>
+                    Join a Room
+                </Button>
+                {roomList.length !== 0 && 
+                    <Button color="primary" variant="contained" style={{marginLeft: 5}} onClick={() => setShowAsTable(!showAsTable)}>{showAsTable ? "Show as Card" : "Show as Table"}</Button>
+                }
             </Grid>
         </Grid>
         {showAsTable ? renderRoomListAsTable() : renderRoomListAsCard()}

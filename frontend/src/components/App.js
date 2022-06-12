@@ -9,7 +9,7 @@ export default class App extends Component {
 
   render() {
     return (
-      <div style={{height: "100%", padding: "0 150px"}} className="house_party">
+      <div style={{height: "100%", overflow: "auto"}}>
         <HomePage />
       </div>
     );

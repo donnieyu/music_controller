@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Grid, Button, Typography } from "@material-ui/core";
+import { Grid, Button, Typography, Modal } from "@material-ui/core";
 import CreateRoomPage from "./CreateRoomPage";
 import MusicPlayer from "./MusicPlayer";
 import { useLocation } from "react-router-dom";
@@ -14,6 +14,7 @@ export default class Room extends Component {
       showSettings: false,
       spotifyAuthenticated: false,
       song: {},
+      title: null
     };
     this.roomCode = this.props.match.params.roomCode;
     this.leaveButtonPressed = this.leaveButtonPressed.bind(this);
@@ -48,6 +49,7 @@ export default class Room extends Component {
           votesToSkip: data.votes_to_skip,
           guestCanPause: data.guest_can_pause,
           isHost: data.is_host,
+          title: data.title,
         });
         if (this.state.isHost) {
           this.authenticateSpotify();
@@ -64,7 +66,7 @@ export default class Room extends Component {
           fetch("/spotify/get-auth-url")
             .then((response) => response.json())
             .then((data) => {
-              window.location.replace(data.url);
+              window.open(data.url, "_blank");
             });
         }
       });
@@ -90,12 +92,15 @@ export default class Room extends Component {
     this.props.history.push("/");
   }
 
-  DeleteButtonPressed() {
+  DeleteButtonPressed(roomCode) {
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: roomCode,
+    }),
     };
-    fetch("/api/leave-room", requestOptions).then((_response) => {
+    fetch("/api/delete-room", requestOptions).then((_response) => {
       this.props.leaveRoomCallback();
       this.props.history.push("/");
     });
@@ -108,6 +113,7 @@ export default class Room extends Component {
   }
 
   renderSettings() {
+    console.log(this.state);
     return (
       <Grid container spacing={1}>
         <Grid item xs={12} align="center">
@@ -116,17 +122,10 @@ export default class Room extends Component {
             votesToSkip={this.state.votesToSkip}
             guestCanPause={this.state.guestCanPause}
             roomCode={this.roomCode}
+            roomTitle={this.state.title}
             updateCallback={this.getRoomDetails}
+            handleModal={this.updateShowSettings}
           />
-        </Grid>
-        <Grid item xs={12} align="center">
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => this.updateShowSettings(false)}
-          >
-            Close
-          </Button>
         </Grid>
       </Grid>
     );
@@ -147,10 +146,10 @@ export default class Room extends Component {
   }
 
   render() {
-    if (this.state.showSettings) {
-      return this.renderSettings();
-    }
-    return (
+    // if (this.state.showSettings) {
+    //   return this.renderSettings();
+    // }
+    return <>
       <Grid container justifyContent="center" spacing={1}>
         <Grid item xs={12} align="center">
           <TitleComponent/>
@@ -171,13 +170,19 @@ export default class Room extends Component {
           <Button
             variant="contained"
             color="secondary"
-            onClick={this.leaveButtonPressed}
+            onClick={() => this.DeleteButtonPressed(this.roomCode)}
           >
             Delete Room
           </Button>
         </Grid>
       </Grid>
-    );
+      <Modal
+        open={this.state.showSettings}
+        onClose={() => this.updateShowSettings(false)}
+      >
+        { this.renderSettings() }
+      </Modal>
+    </>;
   }
 }
 

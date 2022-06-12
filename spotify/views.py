@@ -100,17 +100,18 @@ class CurrentSong(APIView):
             'id': song_id
         }
 
-        self.update_room_song(room, song_id, album_cover)
+        self.update_room_song(room, song_id, album_cover, artist_string)
 
         return Response(song, status=status.HTTP_200_OK)
 
-    def update_room_song(self, room, song_id, album_cover):
+    def update_room_song(self, room, song_id, album_cover, artist_string):
         current_song = room.current_song
 
         if current_song != song_id:
             room.current_song = song_id
             room.album_cover = album_cover
-            room.save(update_fields=['current_song', 'album_cover'])
+            room.artist_string = artist_string
+            room.save(update_fields=['current_song', 'album_cover', 'artist_string'])
             votes = Vote.objects.filter(room=room).delete()
 
 

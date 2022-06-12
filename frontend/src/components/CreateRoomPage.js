@@ -18,6 +18,7 @@ export default class CreateRoomPage extends Component {
     guestCanPause: true,
     update: false,
     roomCode: null,
+    roomTitle: null,
     updateCallback: () => {},
   };
 
@@ -28,7 +29,7 @@ export default class CreateRoomPage extends Component {
       votesToSkip: this.props.votesToSkip,
       errorMsg: "",
       successMsg: "",
-      title: "",
+      title: this.props.roomTitle ? this.props.roomTitle : "",
     };
 
     this.handleRoomButtonPressed = this.handleRoomButtonPressed.bind(this);
@@ -57,23 +58,34 @@ export default class CreateRoomPage extends Component {
   }
 
   handleRoomButtonPressed() {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        votes_to_skip: this.state.votesToSkip,
-        guest_can_pause: this.state.guestCanPause,
-        title: this.state.title,
-      }),
-    };
-    fetch("/api/create-room", requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        this.props.history.push("/room/" + data.code + "?title=" + data.title);
+    if (!!this.state.title) {
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          votes_to_skip: this.state.votesToSkip,
+          guest_can_pause: this.state.guestCanPause,
+          title: this.state.title,
+        }),
+      };
+      fetch("/api/create-room", requestOptions)
+        .then((response) => response.json())
+        .then((data) => {
+          if (this.props.history) {
+            this.props.history.push("/room/" + data.code + "?title=" + data.title);
+          } else {
+            window.location.replace(`/room/${data.code}?title=${data.title}`);
+          }
+        });
+    } else {
+      this.setState({
+        errorMsg: "Title cannot be empty",
       });
+    }
   }
 
   handleUpdateButtonPressed() {
+    console.log(this.state.title);
     const requestOptions = {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -81,10 +93,13 @@ export default class CreateRoomPage extends Component {
         votes_to_skip: this.state.votesToSkip,
         guest_can_pause: this.state.guestCanPause,
         code: this.props.roomCode,
+        title: this.state.title
       }),
     };
     fetch("/api/update-room", requestOptions).then((response) => {
       if (response.ok) {
+        console.log(this.state.title);
+        window.location.replace(`/room/${this.props.roomCode}?title=${this.state.title}`);
         this.setState({
           successMsg: "Room updated successfully!",
         });
@@ -110,8 +125,8 @@ export default class CreateRoomPage extends Component {
           </Button>
         </Grid>
         <Grid item xs={12} align="center">
-          <Button color="secondary" variant="contained" to="/" component={Link}>
-            Back
+          <Button color="secondary" variant="contained" onClick={() => this.props.handleModal(false)}>
+            Close
           </Button>
         </Grid>
       </Grid>
@@ -125,9 +140,15 @@ export default class CreateRoomPage extends Component {
           color="primary"
           variant="contained"
           onClick={this.handleUpdateButtonPressed}
+          style={{marginBottom: 10}}
         >
           Update Room
         </Button>
+        <Grid item xs={12} align="center">
+          <Button color="secondary" variant="contained" onClick={() => this.props.handleModal(false)}>
+            Close
+          </Button>
+        </Grid>
       </Grid>
     );
   }
@@ -135,32 +156,37 @@ export default class CreateRoomPage extends Component {
   render() {
     const title = this.props.update ? "Update Room" : "Create a Room";
 
-    return (
-      <Grid container spacing={1}>
-        <Grid item xs={12} align="center">
-          <Collapse
-            in={this.state.errorMsg != "" || this.state.successMsg != ""}
-          >
-            {this.state.successMsg != "" ? (
-              <Alert
-                severity="success"
-                onClose={() => {
-                  this.setState({ successMsg: "" });
-                }}
-              >
-                {this.state.successMsg}
-              </Alert>
-            ) : (
-              <Alert
-                severity="error"
-                onClose={() => {
-                  this.setState({ errorMsg: "" });
-                }}
-              >
-                {this.state.errorMsg}
-              </Alert>
-            )}
-          </Collapse>
+    return <>
+      <Grid 
+        container 
+        spacing={1} 
+        justifyContent="center"
+        className="createModal"
+      >
+        <Grid item xs={10} align="center">
+            <Collapse
+              in={this.state.errorMsg != "" || this.state.successMsg != ""}
+            >
+              {this.state.successMsg != "" ? (
+                <Alert
+                  severity="success"
+                  onClose={() => {
+                    this.setState({ successMsg: "" });
+                  }}
+                >
+                  {this.state.successMsg}
+                </Alert>
+              ) : (
+                <Alert
+                  severity="error"
+                  onClose={() => {
+                    this.setState({ errorMsg: "" });
+                  }}
+                >
+                  {this.state.errorMsg}
+                </Alert>
+              )}
+            </Collapse>
         </Grid>
         <Grid item xs={12} align="center">
           <Typography component="h4" variant="h4">
@@ -169,20 +195,21 @@ export default class CreateRoomPage extends Component {
         </Grid>
         <Grid item xs={12} align="center">
           <FormControl component="fieldset">
-          <FormHelperText>
-              <div align="center">Title of the room</div>
+            <FormHelperText>
             </FormHelperText>
             <TextField
+              label="Title of the room"
+              error={this.state.errorMsg}
               required={true}
               type="string"
               onChange={this.handleTitleChange}
-              defaultValue={""}
+              defaultValue={this.state.title}
               inputProps={{
-                style: { textAlign: "center" },
+                style: { textAlign: "center"},
               }}
             />
             <FormHelperText>
-              <div align="center">Guest Control of Playback State</div>
+              <div align="left" style={{marginTop: "20px"}}><b>Guest Control of Playback State</b></div>
             </FormHelperText>
             <RadioGroup
               row
@@ -207,24 +234,22 @@ export default class CreateRoomPage extends Component {
         <Grid item xs={12} align="center">
           <FormControl>
             <TextField
+              label="Votes Required To Skip Song"
               required={true}
               type="number"
               onChange={this.handleVotesChange}
               defaultValue={this.state.votesToSkip}
               inputProps={{
                 min: 1,
-                style: { textAlign: "center" },
+                style: { textAlign: "center", width: "250px"},
               }}
             />
-            <FormHelperText>
-              <div align="center">Votes Required To Skip Song</div>
-            </FormHelperText>
           </FormControl>
         </Grid>
         {this.props.update
           ? this.renderUpdateButtons()
           : this.renderCreateButtons()}
       </Grid>
-    );
+    </>;
   }
 }

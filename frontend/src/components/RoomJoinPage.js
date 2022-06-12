@@ -15,7 +15,11 @@ export default class RoomJoinPage extends Component {
 
   render() {
     return (
-      <Grid container spacing={1}>
+      <Grid 
+        container 
+        spacing={1}
+        className="joinModal"
+      >
         <Grid item xs={12} align="center">
           <Typography variant="h4" component="h4">
             Join a Room
@@ -42,8 +46,8 @@ export default class RoomJoinPage extends Component {
           </Button>
         </Grid>
         <Grid item xs={12} align="center">
-          <Button variant="contained" color="secondary" to="/" component={Link}>
-            Back
+          <Button variant="contained" color="secondary" onClick={() => this.props.handleModal(false)}>
+            Close
           </Button>
         </Grid>
       </Grid>
@@ -67,7 +71,11 @@ export default class RoomJoinPage extends Component {
     fetch("/api/join-room", requestOptions)
       .then((response) => {
         if (response.ok) {
-          this.props.history.push(`/room/${this.state.roomCode}`);
+          if (!!this.props.history) {
+            this.props.history.push(`/room/${this.state.roomCode}`);
+          } else {
+            window.location.replace(`/room/${this.state.roomCode}`);
+          }
         } else {
           this.setState({ error: "Room not found." });
         }
